@@ -73,7 +73,8 @@ end
 mkdir(DataPath);
 % assign save names
 nucleus_name = [DataPath 'nucleus_struct.mat']; % names for compiled elipse struct
-
+nucleus_name_local = ['../dat/' project '/']; % names for compiled elipse struct
+mkdir(nucleus_name_local)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% Obtain Relevant Filepaths %%%%%%%%%%%%%%%%%%%%%%%
 % initialize filename vectors
@@ -143,9 +144,6 @@ for i = 1:length(cp_filenames)
     time_clean = time_raw(first_frame:end);    
     time_clean = time_clean - min(time_clean); % Normalize to start of nc
     % temporary fix for problematic time vector
-    if strcmp(cp_filenames{i},'E:\Nick\LivemRNA\Dropbox\LocalEnrichmentResults\2020-02-07-Dl_Ven_snaBAC_MCPmCh_F-F-F_Leica_Zoom2_7uW14uW_06/CompiledParticles.mat') %wtf
-        time_clean = linspace(0,max(time_clean),numel(time_clean));
-    end
     frames_clean = frames_raw(first_frame:end);        
     % get basic frame info
     yDim = FrameInfo(1).LinesPerFrame;
@@ -214,7 +212,7 @@ for i = 1:length(cp_filenames)
             fn = fn(1:strfind(fn,'/')-1);
             s_cells(e_pass).source_path = fn;                                     
             % AP flag not relevant atm
-            s_cells(e_pass).ap_flag = 0;
+            s_cells(e_pass).ap_flag = ap_flag;
             
             % sister spot fields
             s_cells(e_pass).sister_Index = NaN;
@@ -339,9 +337,9 @@ end
 disp('interpolating data...')
 % generate interpolation fields
 if threeD_flag
-    interp_fields = {'fluo','fluo3D'};
+    interp_fields = {'fluo','fluo3D','APPosParticle','xPosParticle','yPosParticle','zPosParticle'};
 else
-    interp_fields = {'fluo'};
+    interp_fields = {'fluo','APPosParticle','xPosParticle','yPosParticle','zPosParticle'};
 end
 interpGrid = 0:TresInterp:60*60;
 for i = 1:numel(nucleus_struct)
@@ -393,6 +391,7 @@ end
 % call function to calculate average psf difs
 % save
 save(nucleus_name ,'nucleus_struct') 
+save([nucleus_name_local 'nucleus_struct.mat'],'nucleus_struct') 
 
 if calculatePSF
     disp('calculating psf dims...')
