@@ -34,7 +34,7 @@ project = 'eve_opto_v1';
 modelPath = './utilities';
 
 % INFERENCE PARAMETERS
-savioFlag = 0;
+savioFlag = 1;
 awsFlag = 0;
 fluo3D_flag = 0;
 automatic_binning = false;
@@ -52,8 +52,8 @@ min_dp_per_inf = 1000; % inference will be aborted if fewer present
 %%%%%%%%%%%%%%
 
 % MODEL ARCHITECTURE
-K = 2; % number of states
-w = 4; % number of time steps needed for elongation
+K = 3; % number of states
+w = 7; % number of time steps needed for elongation
 
 nBoots = 10;
 DataPath = ['../dat/' project '/'];
