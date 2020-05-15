@@ -34,15 +34,14 @@ use_psf_fit_dims = false; % if true, use fits from PSF fitting
 xy_sigma_um = 0.25;% um 
 z_sigma_um = 0.6; % um
 ignoreQC = false;
+zMax = 30;
 rawPath = 'E:\LocalEnrichment\Data\PreProcessedData\';
 proteinChannel = 1;
 [~, DataPath, ~] =   header_function(DropboxFolder, project);
 
 for i = 1:(numel(varargin)-1)  
-    if i ~= numel(varargin)
-        if ~ischar(varargin{i+1})
-            eval([varargin{i} '=varargin{i+1};']);        
-        end
+    if i ~= numel(varargin)      
+        eval([varargin{i} '=varargin{i+1};']);        
     end    
 end
 
@@ -91,6 +90,7 @@ nc_y_ref = [nucleus_struct.yPos];
 spot_x_ref = [nucleus_struct.xPosParticle];
 spot_y_ref = [nucleus_struct.yPosParticle];
 spot_z_ref = [nucleus_struct.zPosParticle];
+
 if threeD_flag
     spot_x_ref3D = [nucleus_struct.xPosParticle3D];
     spot_y_ref3D = [nucleus_struct.yPosParticle3D];
@@ -203,10 +203,6 @@ qc_structure = struct;
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Nucleus segmentation
 %%%%%%%%%%%%%%%%%%%%%%%%%
-xDim = nucleus_struct(1).xDim;
-yDim = nucleus_struct(1).yDim;
-zDim = nucleus_struct(1).zDim;
-[x_ref,y_ref,z_ref] = meshgrid(1:xDim,1:yDim,1:zDim);
 % first check to see if segmentation files exist
 segment_indices = 1:size(set_frame_array,1);
 spot_frame_vec = false(1,size(set_frame_array,1));
@@ -230,14 +226,18 @@ elseif ~all(nc_frame_vec) && ~segmentNuclei
     segmentNuclei = 1;   
     segment_indices = find(~nc_frame_vec);
 end
+
+
 if segmentNuclei
-    disp('segmenting nuclei...')
+    h = waitbar(0,'segmenting nuclei...');
+%     disp('segmenting nuclei...')
     tic    
     %%% Segment nuclei     
     % initialize arrays to store segmentation info
     nucleus_frame_array = NaN(yDim,xDim,numel(segment_indices));
     spot_frame_array = NaN(yDim,xDim,numel(segment_indices));
     for w = 1:numel(segment_indices)
+        waitbar(h,w/numel(segment_indices));
         i = segment_indices(w);
         setID_temp = set_frame_array(i,1);
         frame_temp = set_frame_array(i,2);  
@@ -358,16 +358,19 @@ for i = 1:size(set_frame_array,1)
     pt_qc_vec = pt_qc_ref(frame_set_filter);
     spot_x_vec = spot_x_ref(frame_set_filter);
     spot_y_vec = spot_y_ref(frame_set_filter);        
-    spot_z_vec = spot_z_ref(frame_set_filter); 
+    spot_z_vec = spot_z_ref(frame_set_filter);
     spot_x_vec3D = spot_x_ref3D(frame_set_filter);
     spot_y_vec3D = spot_y_ref3D(frame_set_filter);        
-    spot_z_vec3D = spot_z_ref3D(frame_set_filter); 
+    spot_z_vec3D = spot_z_ref3D(frame_set_filter);
     particle_id_vec = pt_ref(frame_set_filter);
     src = set_key(set_key.setID==setID,:).prefix{1};
 
     % load stacks    
     mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);
-    protein_stack = load_stacks(rawPath, src, frame, proteinChannel);    
+    protein_stack = load_stacks(rawPath, src, frame, proteinChannel);  
+    
+    [yDim, xDim, zDim] = size(protein_stack);    
+    [x_ref,y_ref,z_ref] = meshgrid(1:xDim,1:yDim,1:zDim);
     % generate lookup table of inter-nucleus distances
     x_dist_mat = repmat(nc_x_vec,numel(nc_x_vec),1)-repmat(nc_x_vec',1,numel(nc_x_vec));
     y_dist_mat = repmat(nc_y_vec,numel(nc_y_vec),1)-repmat(nc_y_vec',1,numel(nc_y_vec));
@@ -393,7 +396,8 @@ for i = 1:size(set_frame_array,1)
         % get position info from 3D fit
         x_spot3D = spot_x_vec3D(j);
         y_spot3D = spot_y_vec3D(j);
-        z_spot3D = spot_z_vec3D(j)-1;
+        z_spot3D = min([zMax spot_z_vec3D(j)-1]);        
+        
         
         if isnan(x_spot) || ~pt_qc_vec(j)
             continue
