@@ -203,6 +203,9 @@ qc_structure = struct;
 %%%%%%%%%%%%%%%%%%%%%%%%%
 % Nucleus segmentation
 %%%%%%%%%%%%%%%%%%%%%%%%%
+xDim = nucleus_struct(1).xDim;
+yDim = nucleus_struct(1).yDim;
+
 % first check to see if segmentation files exist
 segment_indices = 1:size(set_frame_array,1);
 spot_frame_vec = false(1,size(set_frame_array,1));
@@ -237,7 +240,7 @@ if segmentNuclei
     nucleus_frame_array = NaN(yDim,xDim,numel(segment_indices));
     spot_frame_array = NaN(yDim,xDim,numel(segment_indices));
     for w = 1:numel(segment_indices)
-        waitbar(h,w/numel(segment_indices));
+        waitbar(w/numel(segment_indices),h);
         i = segment_indices(w);
         setID_temp = set_frame_array(i,1);
         frame_temp = set_frame_array(i,2);  
@@ -369,8 +372,10 @@ for i = 1:size(set_frame_array,1)
     mcp_stack = load_stacks(rawPath, src, frame, mcp_channel);
     protein_stack = load_stacks(rawPath, src, frame, proteinChannel);  
     
+    % get dims and make ref vectors
     [yDim, xDim, zDim] = size(protein_stack);    
     [x_ref,y_ref,z_ref] = meshgrid(1:xDim,1:yDim,1:zDim);
+    
     % generate lookup table of inter-nucleus distances
     x_dist_mat = repmat(nc_x_vec,numel(nc_x_vec),1)-repmat(nc_x_vec',1,numel(nc_x_vec));
     y_dist_mat = repmat(nc_y_vec,numel(nc_y_vec),1)-repmat(nc_y_vec',1,numel(nc_y_vec));
